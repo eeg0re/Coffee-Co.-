@@ -72,10 +72,11 @@ canvas.addEventListener("drawing changed", ()=>{
 
 // --------------------------------------------------------------------
 
+// our function that dispatches the listener for new drawings
 function draw(){
     const drawingChanged = new CustomEvent<{empty: boolean}>('drawing changed', {
         detail: {
-            empty: mousePoints.length === 0
+            empty: mousePoints.length === 0 // ensure there are new lines to be drawn
         }
     });
     canvas.dispatchEvent(drawingChanged);
@@ -109,6 +110,36 @@ app.append(clearButton);
 clearButton.addEventListener("click", ()=>{
     if(context){
         mousePoints.splice(0, mousePoints.length);
-        redraw();
+        draw();
+    }
+});
+
+// add a button for undoing 
+const undoButton = document.createElement("button");
+undoButton.innerHTML = "Undo";
+app.append(undoButton);
+
+undoButton.addEventListener("click", ()=> {
+    if(mousePoints && mousePoints.length > 0){  // check if there's actually anything to undo
+        const newestLine: point[] | undefined = mousePoints.pop();  
+        if(newestLine){                         // make sure we have a line to undo
+            redoLines.push(newestLine);
+            draw();
+        }
+    }
+});
+
+// add a button for redoing 
+const redoButton = document.createElement("button");
+redoButton.innerHTML = "Redo";
+app.append(redoButton);
+
+redoButton.addEventListener("click", ()=> {
+    if(redoLines && redoLines.length > 0){
+        const newRedoLine: point[] | undefined = redoLines.pop();
+        if(newRedoLine){
+            mousePoints.push(newRedoLine);
+            draw();
+        }
     }
 });
