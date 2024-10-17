@@ -35,13 +35,6 @@ interface point{
     y: number
 }
 
-// create our custom event for whenever the drawing changes
-const drawingChanged = new CustomEvent('drawing changed', {
-    detail: {
-
-    }
-});
-
 // -------------- add event listeners to the canvas --------------------
 canvas.addEventListener("mousedown", (event)=>{         // if mousedown happens, activate the cursor
     cursor.active = true;
@@ -52,21 +45,17 @@ canvas.addEventListener("mousedown", (event)=>{         // if mousedown happens,
     mousePoints.push(currentLine);
     redoLines.splice(0, redoLines.length);
     currentLine.push({x: cursor.x, y: cursor.y});
+    draw(); 
 
-    redraw();
 });
 
 canvas.addEventListener("mousemove", (event)=>{
     if(cursor.active && context){
-        // context.beginPath();
-        // context.moveTo(cursor.x, cursor.y);
-        // context.lineTo(event.offsetX, event.offsetY);
-        // context.stroke();
         cursor.x = event.offsetX;
         cursor.y = event.offsetY;
         currentLine.push({x: cursor.x, y: cursor.y});
 
-        redraw();
+        draw();
     }
 });
 
@@ -74,9 +63,23 @@ canvas.addEventListener("mouseup", ()=>{
     cursor.active = false; 
     currentLine = [];
 
-    redraw();
+    draw();
 });
+
+canvas.addEventListener("drawing changed", ()=>{
+    redraw();
+})
+
 // --------------------------------------------------------------------
+
+function draw(){
+    const drawingChanged = new CustomEvent<{empty: boolean}>('drawing changed', {
+        detail: {
+            empty: mousePoints.length === 0
+        }
+    });
+    canvas.dispatchEvent(drawingChanged);
+}
 
 // our redraw function
 function redraw(){
@@ -109,5 +112,3 @@ clearButton.addEventListener("click", ()=>{
         redraw();
     }
 });
-
-// add an undo button 
