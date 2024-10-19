@@ -18,21 +18,54 @@ canvas.width = 256;
 canvas.height = 256;
 app.append(canvas);
 
-const context = canvas.getContext("2d");// get canvas context so we can draw
+const ctx = canvas.getContext("2d");// get canvas ctx so we can draw
 const cursor = {
     active: false, 
     x: 0,
     y: 0,
 };
 
-// create our array of mouse points
-const mousePoints:point[][] = [];      // array of all lines so far
-const redoLines:point[][] = [];        // array used for redoing
-let currentLine:point[];               // array of points on current line
+const lines: drawableLine[] = [];      // array of all lines so far
+const redoLines: drawableLine[] = [];        // array used for redoing
+let currentLine: drawableLine;               // array of points on current line
+
 // create an interface so we can pass points to the arrays
 interface point{
     x: number,
     y: number
+}
+
+// make an interface with lines display/drag methods
+interface drawableLine{
+    points: point[],
+    display(context: CanvasRenderingContext2D): void;
+    drag(x:number, y:number): void;
+}
+
+// factory function for making drawableLines
+function createDrawableLine(initX: number, initY: number): drawableLine{
+    const points: point[] = [{x: initX, y: initY}];
+
+    return {
+        points, 
+
+        drag(x:number, y:number){
+            points.push({x, y});
+        },
+        
+        display(context: CanvasRenderingContext2D){
+            if(this.points.length > 1){
+                context.beginPath();
+                const firstPoint:point = this.points[0];
+                context.moveTo(firstPoint.x, firstPoint.y);
+                for (const point of this.points){
+                    context.lineTo(point.x, point.y);
+                }
+                context.stroke();
+            }
+            
+        }
+    }
 }
 
 // -------------- add event listeners to the canvas --------------------
@@ -40,20 +73,21 @@ canvas.addEventListener("mousedown", (event)=>{         // if mousedown happens,
     cursor.active = true;
     cursor.x = event.offsetX;
     cursor.y = event.offsetY;
+    
+    currentLine = createDrawableLine(cursor.x, cursor.y);
 
-    currentLine = [];
-    mousePoints.push(currentLine);
+    lines.push(currentLine);
     redoLines.splice(0, redoLines.length);
-    currentLine.push({x: cursor.x, y: cursor.y});
+    currentLine.points.push({x: cursor.x, y: cursor.y});
     draw(); 
 
 });
 
 canvas.addEventListener("mousemove", (event)=>{
-    if(cursor.active && context){
+    if(cursor.active && ctx){
         cursor.x = event.offsetX;
         cursor.y = event.offsetY;
-        currentLine.push({x: cursor.x, y: cursor.y});
+        currentLine.points.push({x: cursor.x, y: cursor.y});
 
         draw();
     }
@@ -61,8 +95,6 @@ canvas.addEventListener("mousemove", (event)=>{
 
 canvas.addEventListener("mouseup", ()=>{ 
     cursor.active = false; 
-    currentLine = [];
-
     draw();
 });
 
@@ -76,7 +108,7 @@ canvas.addEventListener("drawing changed", ()=>{
 function draw(){
     const drawingChanged = new CustomEvent<{empty: boolean}>('drawing changed', {
         detail: {
-            empty: mousePoints.length === 0 // ensure there are new lines to be drawn
+            empty: lines.length === 0 // ensure there are new lines to be drawn
         }
     });
     canvas.dispatchEvent(drawingChanged);
@@ -84,18 +116,10 @@ function draw(){
 
 // our redraw function
 function redraw(){
-    if(context){
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        for (const line of mousePoints){
-            if(line.length > 1){
-                context.beginPath();
-                const {x, y} = line[0];
-                context.moveTo(x, y);
-                for(const {x, y} of line){
-                    context.lineTo(x, y);
-                }
-                context.stroke();
-            }
+    if(ctx){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const line of lines){
+            line.display(ctx);
         }
     }
 }
@@ -108,8 +132,8 @@ const clearButton = document.createElement("button");
 clearButton.innerHTML = "Clear";
 app.append(clearButton);
 clearButton.addEventListener("click", ()=>{
-    if(context){
-        mousePoints.splice(0, mousePoints.length);
+    if(ctx){
+        lines.splice(0, lines.length);
         draw();
     }
 });
@@ -120,8 +144,8 @@ undoButton.innerHTML = "Undo";
 app.append(undoButton);
 
 undoButton.addEventListener("click", ()=> {
-    if(mousePoints && mousePoints.length > 0){  // check if there's actually anything to undo
-        const newestLine: point[] | undefined = mousePoints.pop();  
+    if(lines && lines.length > 0){  // check if there's actually anything to undo
+        const newestLine: drawableLine | undefined = lines.pop();  
         if(newestLine){                         // make sure we have a line to undo
             redoLines.push(newestLine);
             draw();
@@ -136,9 +160,9 @@ app.append(redoButton);
 
 redoButton.addEventListener("click", ()=> {
     if(redoLines && redoLines.length > 0){
-        const newRedoLine: point[] | undefined = redoLines.pop();
+        const newRedoLine: drawableLine | undefined = redoLines.pop();
         if(newRedoLine){
-            mousePoints.push(newRedoLine);
+            lines.push(newRedoLine);
             draw();
         }
     }
