@@ -18,16 +18,49 @@ canvas.width = 256;
 canvas.height = 256;
 app.append(canvas);
 
-const ctx = canvas.getContext("2d");// get canvas ctx so we can draw
+canvas.style.cursor = "none";
+
+const ctx = canvas.getContext("2d");// get canvas ctx so we can NotifyChange
 const cursor = {
     active: false, 
     x: 0,
     y: 0,
 };
 
+interface Tool{
+    draw(context: CanvasRenderingContext2D): void,
+}
+
+interface Marker extends Tool {
+    lineWidth: number,
+}
+
+let currentTool:Tool | null = null;
+let toolList:Tool[] = [];
+
 const lines: drawableLine[] = [];      // array of all lines so far
 const redoLines: drawableLine[] = [];        // array used for redoing
 let currentLine: drawableLine;               // array of points on current line
+
+function createMarker(lineWidth:number): Marker{
+    return {
+        draw(context: CanvasRenderingContext2D){
+            if(context){
+                DisplayLines();
+        
+                context.beginPath();
+                context.strokeStyle = 'rgba(0,0,0,0.5)';
+                context.arc(cursor.x, cursor.y, currentLineWidth/2, 0, Math.PI * 2);
+                context.lineWidth = currentLineWidth;
+                context.stroke();
+            }
+        },
+        lineWidth: lineWidth,
+    }
+}
+
+toolList.push(createMarker(1));
+toolList.push(createMarker(3));
 
 // create an interface so we can pass points to the arrays
 interface point{
@@ -52,8 +85,16 @@ function createDrawableLine(initX: number, initY: number, lineWidth: number): dr
         lineWidth, 
         drag(x:number, y:number){
             points.push({x, y});
+            if(ctx){
+                ctx.beginPath();
+                if(currentLine.points.length > 1){
+                    const len = currentLine.points.length;
+                    ctx.moveTo(currentLine.points[len-2].x, currentLine.points[len - 2].y);
+                    ctx.lineTo(cursor.x, cursor.y);
+                    ctx.stroke();
+                }
+            }
         },
-        
         display(context: CanvasRenderingContext2D){
             if(this.points.length > 1){
                 context.beginPath();
@@ -65,7 +106,6 @@ function createDrawableLine(initX: number, initY: number, lineWidth: number): dr
                 context.lineWidth = this.lineWidth; 
                 context.stroke();
             }
-            
         }
     }
 }
@@ -84,39 +124,47 @@ canvas.addEventListener("mousedown", (event)=>{
     lines.push(currentLine);
     redoLines.splice(0, redoLines.length);
     currentLine.points.push({x: cursor.x, y: cursor.y});
-    draw(); 
+    NotifyChange(); 
 
 });
 
 canvas.addEventListener("mousemove", (event)=>{
-    if(cursor.active && ctx){
+    if(cursor.active){
         cursor.x = event.offsetX;
         cursor.y = event.offsetY;
-        currentLine.points.push({x: cursor.x, y: cursor.y});
+        currentLine.drag(cursor.x, cursor.y);
+    }
+    else{
+        cursor.x = event.offsetX;
+        cursor.y = event.offsetY;
 
-        ctx.beginPath();
-        if(currentLine.points.length > 1){
-            const len = currentLine.points.length;
-            ctx.moveTo(currentLine.points[len-2].x, currentLine.points[len - 2].y);
-            ctx.lineTo(cursor.x, cursor.y);
-            ctx.stroke();
-        }
+        const toolMovedEvent = new CustomEvent("tool moved", {
+            detail: {
+                x: cursor.x,
+                y: cursor.y,
+            }
+        });
+        canvas.dispatchEvent(toolMovedEvent);
     }
 });
 
 canvas.addEventListener("mouseup", ()=>{ 
     cursor.active = false; 
-    draw();
+    NotifyChange();
 });
 
 canvas.addEventListener("drawing changed", ()=>{
     DisplayLines();
 })
 
+canvas.addEventListener("tool moved", ()=>{
+    if(ctx && currentTool){
+        currentTool.draw(ctx);
+    }
+});
 // --------------------------------------------------------------------
 
-// our function that dispatches the listener for new drawings
-function draw(){
+function NotifyChange(){
     const drawingChanged = new CustomEvent<{empty: boolean}>('drawing changed', {
         detail: {
             empty: lines.length === 0 // ensure there are new lines to be drawn
@@ -142,6 +190,8 @@ interface button{
     callback: Function,
 };
 
+let htmlButtons:HTMLButtonElement[] = [];
+
 const buttons:button[] = [
     {
         label: "Thin marker",
@@ -149,6 +199,15 @@ const buttons:button[] = [
         type: "tool",
         callback: () => {
             currentLineWidth = 1;
+            currentTool = toolList[0];
+            for(let i = 0; i < htmlButtons.length; i++){
+                if(htmlButtons[i].innerHTML == "Thin marker"){
+                    htmlButtons[i].style.backgroundColor = "#29415c"
+                }
+                else{
+                    htmlButtons[i].style.backgroundColor = '';
+                }
+            }
         },
     },
     {
@@ -157,6 +216,15 @@ const buttons:button[] = [
         type: "tool",
         callback: () => {
             currentLineWidth = 3;
+            currentTool = toolList[1];
+            for(let i = 0; i < htmlButtons.length; i++){
+                if(htmlButtons[i].innerHTML == "Thick marker"){
+                    htmlButtons[i].style.backgroundColor = "#29415c"
+                }
+                else{
+                    htmlButtons[i].style.backgroundColor = '';
+                }
+            }
         }
     },
     {
@@ -166,7 +234,7 @@ const buttons:button[] = [
         callback: () => {
             if(ctx){
                 lines.splice(0, lines.length);
-                draw();
+                NotifyChange();
             }
         }
     },
@@ -179,7 +247,7 @@ const buttons:button[] = [
                 const newestLine: drawableLine | undefined = lines.pop();  
                 if(newestLine){                         // make sure we have a line to undo
                     redoLines.push(newestLine);
-                    draw();
+                    NotifyChange();
                 }
             }
         }
@@ -193,30 +261,33 @@ const buttons:button[] = [
                 const newRedoLine: drawableLine | undefined = redoLines.pop();
                 if(newRedoLine){
                     lines.push(newRedoLine);
-                    draw();
+                    NotifyChange();
                 }
             }
         }
     }
 ];
 
-function MakeButtonsFromList(buttons: button[]){
+function MakeButtonsFromList(buttons: button[]): HTMLButtonElement[]{
     let lastButtonType: string = '';
+    const buttonsList: HTMLButtonElement[] = [];
     for (let i = 0; i < buttons.length; i++){
         if(buttons[i].type != lastButtonType){
             app.append(document.createElement("br"));
         }
         lastButtonType = buttons[i].type;
-        MakeButton(buttons[i]);
+        buttonsList.push(MakeButton(buttons[i]));
     }
+    return buttonsList;
 }
 
-function MakeButton(buttn: button){
+function MakeButton(buttn: button): HTMLButtonElement{
     const thisButton = document.createElement("button");
     thisButton.innerHTML = buttn.label;
     app.append(thisButton);
     thisButton.style.backgroundColor = buttn.color;
     thisButton.addEventListener('click', () => { buttn.callback() } );
+    return thisButton;
 }
 
-MakeButtonsFromList(buttons);
+htmlButtons = MakeButtonsFromList(buttons);
