@@ -28,15 +28,19 @@ const cursor = {
 };
 
 interface Tool{
-    draw(context: CanvasRenderingContext2D): void,
+    preview(context: CanvasRenderingContext2D): void,
 }
 
 interface Marker extends Tool {
     lineWidth: number,
 }
 
+interface Sticker extends Tool {
+    sticker: string,
+}
+
 let currentTool:Tool | null = null;
-let toolList:Tool[] = [];
+const toolList:Tool[] = [];
 
 const lines: drawableLine[] = [];      // array of all lines so far
 const redoLines: drawableLine[] = [];        // array used for redoing
@@ -44,7 +48,7 @@ let currentLine: drawableLine;               // array of points on current line
 
 function createMarker(lineWidth:number): Marker{
     return {
-        draw(context: CanvasRenderingContext2D){
+        preview(context: CanvasRenderingContext2D){
             if(context){
                 DisplayLines();
         
@@ -59,8 +63,29 @@ function createMarker(lineWidth:number): Marker{
     }
 }
 
+function createSticker(sticker:string): Sticker{
+    return{
+        preview(context: CanvasRenderingContext2D){
+            DisplayLines();
+            context.globalAlpha = 0.2;
+            context.fillStyle = "#000000";
+            context.translate(cursor.x,cursor.y);
+            context.rotate(0);
+            context.font = `${currentLineWidth * 4}px monospace`;
+            context.fillText(sticker, - currentLineWidth / 1.1, currentLineWidth);
+            context.globalAlpha = 1;
+            context.resetTransform();
+        },
+        sticker: sticker,
+    }
+}
+
 toolList.push(createMarker(1));
 toolList.push(createMarker(3));
+toolList.push(createSticker('🐵'));
+toolList.push(createSticker('🖐️'));
+toolList.push(createSticker('🌳'));
+toolList.push(createSticker('💥'));
 
 // create an interface so we can pass points to the arrays
 interface point{
@@ -159,7 +184,7 @@ canvas.addEventListener("drawing changed", ()=>{
 
 canvas.addEventListener("tool moved", ()=>{
     if(ctx && currentTool){
-        currentTool.draw(ctx);
+        currentTool.preview(ctx);
     }
 });
 // --------------------------------------------------------------------
@@ -265,7 +290,75 @@ const buttons:button[] = [
                 }
             }
         }
-    }
+    },
+    {
+        label: "🐵",
+        color: "",
+        type: "tool",
+        callback: () => {
+            currentLineWidth = 5;
+            currentTool = toolList[2];
+            for(let i = 0; i < htmlButtons.length; i++){
+                if(htmlButtons[i].innerHTML == "🐵"){
+                    htmlButtons[i].style.backgroundColor = "#29415c"
+                }
+                else{
+                    htmlButtons[i].style.backgroundColor = '';
+                }
+            }
+        },
+    },
+    {
+        label: "🖐️",
+        color: "",
+        type: "tool",
+        callback: () => {
+            currentLineWidth = 5;
+            currentTool = toolList[3];
+            for(let i = 0; i < htmlButtons.length; i++){
+                if(htmlButtons[i].innerHTML == "🖐️"){
+                    htmlButtons[i].style.backgroundColor = "#29415c"
+                }
+                else{
+                    htmlButtons[i].style.backgroundColor = '';
+                }
+            }
+        },
+    },
+    {
+        label: "🌳",
+        color: "",
+        type: "tool",
+        callback: () => {
+            currentLineWidth = 5;
+            currentTool = toolList[4];
+            for(let i = 0; i < htmlButtons.length; i++){
+                if(htmlButtons[i].innerHTML == "🌳"){
+                    htmlButtons[i].style.backgroundColor = "#29415c"
+                }
+                else{
+                    htmlButtons[i].style.backgroundColor = '';
+                }
+            }
+        },
+    },
+    {
+        label: "💥",
+        color: "",
+        type: "tool",
+        callback: () => {
+            currentLineWidth = 5;
+            currentTool = toolList[5];
+            for(let i = 0; i < htmlButtons.length; i++){
+                if(htmlButtons[i].innerHTML == "💥"){
+                    htmlButtons[i].style.backgroundColor = "#29415c"
+                }
+                else{
+                    htmlButtons[i].style.backgroundColor = '';
+                }
+            }
+        },
+    },
 ];
 
 function MakeButtonsFromList(buttons: button[]): HTMLButtonElement[]{
