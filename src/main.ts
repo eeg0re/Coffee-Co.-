@@ -20,12 +20,14 @@ app.append(canvas);
 
 canvas.style.cursor = "none";
 
-const ctx = canvas.getContext("2d");// get canvas ctx so we can NotifyChange
+const ctx = canvas.getContext("2d"); // get canvas ctx so we can NotifyChange
 const cursor = {
     active: false, 
     x: 0,
     y: 0,
 };
+
+let stickerMode: boolean = false;
 
 interface Tool{
     preview(context: CanvasRenderingContext2D): void,
@@ -39,18 +41,18 @@ interface Sticker extends Tool {
     sticker: string,
 }
 
-let currentTool:Tool | null = null;
+let currentTool:Marker | Sticker | null = null;
 const toolList:Tool[] = [];
 
-const lines: drawableLine[] = [];      // array of all lines so far
-const redoLines: drawableLine[] = [];        // array used for redoing
-let currentLine: drawableLine;               // array of points on current line
+const commands: drawableCMD[] = [];      // array of all commands so far
+const redoCommands: drawableCMD[] = [];        // array used for redoing
+let currentLine: drawableCMD;               // array of points on current line
 
 function createMarker(lineWidth:number): Marker{
     return {
         preview(context: CanvasRenderingContext2D){
             if(context){
-                DisplayLines();
+                DisplayCommands();
         
                 context.beginPath();
                 context.strokeStyle = 'rgba(0,0,0,0.5)';
@@ -66,7 +68,7 @@ function createMarker(lineWidth:number): Marker{
 function createSticker(sticker:string): Sticker{
     return{
         preview(context: CanvasRenderingContext2D){
-            DisplayLines();
+            DisplayCommands();
             context.globalAlpha = 0.2;
             context.fillStyle = "#000000";
             context.translate(cursor.x,cursor.y);
@@ -93,45 +95,82 @@ interface point{
     y: number
 }
 
-// make an interface with lines display/drag methods
-interface drawableLine{
+// make an interface with commands display/drag methods
+interface drawableCMD{
     points: point[],
+    sticker: string,
     display(context: CanvasRenderingContext2D): void,
     drag(x:number, y:number): void,
     lineWidth: number,
 };
 
 // factory function for making drawableLines
-function createDrawableLine(initX: number, initY: number, lineWidth: number): drawableLine{
-    const points: point[] = [{x: initX, y: initY}];
-
-    return {
-        points, 
-        lineWidth, 
-        drag(x:number, y:number){
-            points.push({x, y});
-            if(ctx){
-                ctx.beginPath();
-                if(currentLine.points.length > 1){
-                    const len = currentLine.points.length;
-                    ctx.moveTo(currentLine.points[len-2].x, currentLine.points[len - 2].y);
-                    ctx.lineTo(cursor.x, cursor.y);
-                    ctx.stroke();
+function createDrawableLine(initX: number, initY: number, lineWidth: number, sticker: string): drawableCMD{
+    if(!stickerMode){
+        const points: point[] = [{x: initX, y: initY}];
+        return {
+            points, 
+            lineWidth,
+            sticker: '', 
+            drag(x:number, y:number){
+                points.push({x, y});
+                if(ctx){
+                    ctx.beginPath();
+                    if(currentLine.points.length > 1){
+                        const len = currentLine.points.length;
+                        ctx.moveTo(currentLine.points[len-2].x, currentLine.points[len - 2].y);
+                        ctx.lineTo(cursor.x, cursor.y);
+                        ctx.stroke();
+                    }
                 }
-            }
-        },
-        display(context: CanvasRenderingContext2D){
-            if(this.points.length > 1){
-                context.beginPath();
-                const firstPoint:point = this.points[0];
-                context.moveTo(firstPoint.x, firstPoint.y);
-                for (const point of this.points){
-                    context.lineTo(point.x, point.y);
+            },
+            display(context: CanvasRenderingContext2D){
+                if(this.points.length > 1){
+                    context.beginPath();
+                    const firstPoint:point = this.points[0];
+                    context.moveTo(firstPoint.x, firstPoint.y);
+                    for (const point of this.points){
+                        context.lineTo(point.x, point.y);
+                    }
+                    context.lineWidth = this.lineWidth; 
+                    context.stroke();
                 }
-                context.lineWidth = this.lineWidth; 
-                context.stroke();
             }
         }
+    }
+    else{
+        const points = [{x: initX, y: initY}];
+        return {
+            points,
+            lineWidth, 
+            sticker, 
+            drag(x: number, y: number){
+                if(ctx && currentTool){
+                    points[0].x = x;
+                    points[0].y = y;
+
+                    DisplayCommands();
+                    ctx.save();
+                    ctx.fillStyle = "#000000";
+                    ctx.font = `${currentLineWidth * 4}px monospace`;
+                    if('sticker' in currentTool){
+                        ctx.fillText(this.sticker, points[0].x, points[0].y);
+                    }
+                    ctx.globalAlpha = 1;
+                    ctx.restore();
+                }
+            },
+            display(context: CanvasRenderingContext2D){
+                context.save();
+                context.fillStyle = "#000000";
+                context.font = `${currentLineWidth * 4}px monospace`;
+                if(currentTool && 'sticker' in currentTool){
+                    context.fillText(this.sticker, points[0].x, points[0].y);
+                }
+                context.restore();
+            }
+        }
+
     }
 }
 
@@ -144,10 +183,15 @@ canvas.addEventListener("mousedown", (event)=>{
     cursor.x = event.offsetX;
     cursor.y = event.offsetY;
 
-    currentLine = createDrawableLine(cursor.x, cursor.y, currentLineWidth);
+    if(currentTool && "sticker" in currentTool){
+        currentLine = createDrawableLine(cursor.x, cursor.y, currentLineWidth, currentTool.sticker);
+    }
+    else{
+        currentLine = createDrawableLine(cursor.x, cursor.y, currentLineWidth, '');
+    }
 
-    lines.push(currentLine);
-    redoLines.splice(0, redoLines.length);
+    commands.push(currentLine);
+    redoCommands.splice(0, redoCommands.length);
     currentLine.points.push({x: cursor.x, y: cursor.y});
     NotifyChange(); 
 
@@ -179,7 +223,7 @@ canvas.addEventListener("mouseup", ()=>{
 });
 
 canvas.addEventListener("drawing changed", ()=>{
-    DisplayLines();
+    DisplayCommands();
 })
 
 canvas.addEventListener("tool moved", ()=>{
@@ -192,18 +236,18 @@ canvas.addEventListener("tool moved", ()=>{
 function NotifyChange(){
     const drawingChanged = new CustomEvent<{empty: boolean}>('drawing changed', {
         detail: {
-            empty: lines.length === 0 // ensure there are new lines to be drawn
+            empty: commands.length === 0 // ensure there are new commands to be drawn
         }
     });
     canvas.dispatchEvent(drawingChanged);
 }
 
 // function that calls the display method
-function DisplayLines(){
+function DisplayCommands(){
     if(ctx){
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        for (const line of lines){
-            line.display(ctx);
+        for (const command of commands){
+            command.display(ctx);
         }
     }
 }
@@ -233,6 +277,7 @@ const buttons:button[] = [
                     htmlButtons[i].style.backgroundColor = '';
                 }
             }
+            stickerMode = false;
         },
     },
     {
@@ -250,6 +295,7 @@ const buttons:button[] = [
                     htmlButtons[i].style.backgroundColor = '';
                 }
             }
+            stickerMode = false;
         }
     },
     {
@@ -258,7 +304,7 @@ const buttons:button[] = [
         type: "functional",
         callback: () => {
             if(ctx){
-                lines.splice(0, lines.length);
+                commands.splice(0, commands.length);
                 NotifyChange();
             }
         }
@@ -268,10 +314,10 @@ const buttons:button[] = [
         color: '',
         type: "functional",
         callback: () => {
-            if(lines && lines.length > 0){  // check if there's actually anything to undo
-                const newestLine: drawableLine | undefined = lines.pop();  
+            if(commands && commands.length > 0){  // check if there's actually anything to undo
+                const newestLine: drawableCMD | undefined = commands.pop();  
                 if(newestLine){                         // make sure we have a line to undo
-                    redoLines.push(newestLine);
+                    redoCommands.push(newestLine);
                     NotifyChange();
                 }
             }
@@ -282,10 +328,10 @@ const buttons:button[] = [
         color: '',
         type: "functional",
         callback: () => {
-            if(redoLines && redoLines.length > 0){
-                const newRedoLine: drawableLine | undefined = redoLines.pop();
+            if(redoCommands && redoCommands.length > 0){
+                const newRedoLine: drawableCMD | undefined = redoCommands.pop();
                 if(newRedoLine){
-                    lines.push(newRedoLine);
+                    commands.push(newRedoLine);
                     NotifyChange();
                 }
             }
@@ -306,6 +352,7 @@ const buttons:button[] = [
                     htmlButtons[i].style.backgroundColor = '';
                 }
             }
+            stickerMode = true;
         },
     },
     {
@@ -323,6 +370,7 @@ const buttons:button[] = [
                     htmlButtons[i].style.backgroundColor = '';
                 }
             }
+            stickerMode = true;
         },
     },
     {
@@ -340,6 +388,7 @@ const buttons:button[] = [
                     htmlButtons[i].style.backgroundColor = '';
                 }
             }
+            stickerMode = true;
         },
     },
     {
@@ -357,6 +406,7 @@ const buttons:button[] = [
                     htmlButtons[i].style.backgroundColor = '';
                 }
             }
+            stickerMode = true;
         },
     },
 ];
