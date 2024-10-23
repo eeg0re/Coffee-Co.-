@@ -402,4 +402,21 @@ app.append(document.createElement("br"));
 const addMore = document.createElement("button");
 addMore.innerHTML = "Add your own sticker";
 app.append(addMore);
-
+addMore.addEventListener('click', () => {
+    const newSticker = prompt("type an emoji here: ");
+    if(newSticker && newSticker != ''){
+        const toolNum: number = toolList.length; 
+        toolList.push(createSticker(newSticker));
+        MakeButton({
+            label: newSticker,
+            color: '',
+            type: 'tool', 
+            callback: () => {
+                currentLineWidth = 5;
+                currentTool = toolList[toolNum];
+                checkText(htmlButtons, newSticker);
+                stickerMode = true;
+            },
+        });
+    }
+});
