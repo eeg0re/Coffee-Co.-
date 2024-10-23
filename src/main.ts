@@ -262,14 +262,7 @@ const buttons:button[] = [
         callback: () => {
             currentLineWidth = 1;
             currentTool = toolList[0];
-            for(let i = 0; i < htmlButtons.length; i++){
-                if(htmlButtons[i].innerHTML == "Thin marker"){
-                    htmlButtons[i].style.backgroundColor = "#29415c"
-                }
-                else{
-                    htmlButtons[i].style.backgroundColor = '';
-                }
-            }
+            checkText(htmlButtons, "Thin marker");
             stickerMode = false;
         },
     },
@@ -280,14 +273,7 @@ const buttons:button[] = [
         callback: () => {
             currentLineWidth = 3;
             currentTool = toolList[1];
-            for(let i = 0; i < htmlButtons.length; i++){
-                if(htmlButtons[i].innerHTML == "Thick marker"){
-                    htmlButtons[i].style.backgroundColor = "#29415c"
-                }
-                else{
-                    htmlButtons[i].style.backgroundColor = '';
-                }
-            }
+            checkText(htmlButtons, "Thick marker");
             stickerMode = false;
         }
     },
@@ -337,14 +323,7 @@ const buttons:button[] = [
         callback: () => {
             currentLineWidth = 5;
             currentTool = toolList[2];
-            for(let i = 0; i < htmlButtons.length; i++){
-                if(htmlButtons[i].innerHTML == "🐵"){
-                    htmlButtons[i].style.backgroundColor = "#29415c"
-                }
-                else{
-                    htmlButtons[i].style.backgroundColor = '';
-                }
-            }
+            checkText(htmlButtons, "🐵");
             stickerMode = true;
         },
     },
@@ -355,14 +334,7 @@ const buttons:button[] = [
         callback: () => {
             currentLineWidth = 5;
             currentTool = toolList[3];
-            for(let i = 0; i < htmlButtons.length; i++){
-                if(htmlButtons[i].innerHTML == "🖐️"){
-                    htmlButtons[i].style.backgroundColor = "#29415c"
-                }
-                else{
-                    htmlButtons[i].style.backgroundColor = '';
-                }
-            }
+            checkText(htmlButtons, "🖐️");
             stickerMode = true;
         },
     },
@@ -373,14 +345,7 @@ const buttons:button[] = [
         callback: () => {
             currentLineWidth = 5;
             currentTool = toolList[4];
-            for(let i = 0; i < htmlButtons.length; i++){
-                if(htmlButtons[i].innerHTML == "🌳"){
-                    htmlButtons[i].style.backgroundColor = "#29415c"
-                }
-                else{
-                    htmlButtons[i].style.backgroundColor = '';
-                }
-            }
+            checkText(htmlButtons, "🌳");
             stickerMode = true;
         },
     },
@@ -391,18 +356,23 @@ const buttons:button[] = [
         callback: () => {
             currentLineWidth = 5;
             currentTool = toolList[5];
-            for(let i = 0; i < htmlButtons.length; i++){
-                if(htmlButtons[i].innerHTML == "💥"){
-                    htmlButtons[i].style.backgroundColor = "#29415c"
-                }
-                else{
-                    htmlButtons[i].style.backgroundColor = '';
-                }
-            }
+            checkText(htmlButtons, "💥");
             stickerMode = true;
         },
     },
 ];
+
+// use this function to turn buttons from one color to another
+function checkText(buttons: HTMLButtonElement[], text: string){
+    for(let i = 0; i < htmlButtons.length; i++){
+        if(buttons[i].innerHTML == text){
+            buttons[i].style.backgroundColor = "#29415c"
+        }
+        else{
+           buttons[i].style.backgroundColor = '';
+        }
+    }
+}
 
 function MakeButtonsFromList(buttons: button[]): HTMLButtonElement[]{
     let lastButtonType: string = '';
@@ -427,3 +397,9 @@ function MakeButton(buttn: button): HTMLButtonElement{
 }
 
 htmlButtons = MakeButtonsFromList(buttons);
+app.append(document.createElement("br"));
+
+const addMore = document.createElement("button");
+addMore.innerHTML = "Add your own sticker";
+app.append(addMore);
+
