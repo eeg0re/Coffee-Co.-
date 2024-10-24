@@ -52,7 +52,7 @@ function createMarker(lineWidth:number): Marker{
     return {
         preview(context: CanvasRenderingContext2D){
             if(context){
-                DisplayCommands();
+                DisplayCommands(context);
         
                 context.beginPath();
                 context.strokeStyle = 'rgba(0,0,0,0.5)';
@@ -68,7 +68,7 @@ function createMarker(lineWidth:number): Marker{
 function createSticker(sticker:string): Sticker{
     return{
         preview(context: CanvasRenderingContext2D){
-            DisplayCommands();
+            DisplayCommands(context);
             context.globalAlpha = 0.2;
             context.fillStyle = "#000000";
             context.translate(cursor.x,cursor.y);
@@ -148,7 +148,7 @@ function createDrawableLine(initX: number, initY: number, lineWidth: number, sti
                 if(ctx && currentTool){ // we dont want to check current tool
                     points[0].x = x;
                     points[0].y = y;
-                    DisplayCommands();
+                    DisplayCommands(ctx);
                     drawSticker(ctx, this.sticker, points[0].x, points[0].y, this.lineWidth);
                 }
             },
@@ -216,8 +216,10 @@ canvas.addEventListener("mouseup", ()=>{
 });
 
 canvas.addEventListener("drawing changed", ()=>{
-    DisplayCommands();
-})
+    if(ctx){
+        DisplayCommands(ctx);
+    }
+});
 
 canvas.addEventListener("tool moved", ()=>{
     if(ctx && currentTool){
@@ -236,11 +238,11 @@ function NotifyChange(){
 }
 
 // function that calls the display method
-function DisplayCommands(){
-    if(ctx){
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+function DisplayCommands(context: CanvasRenderingContext2D){
+    if(context){
+        context.clearRect(0, 0, canvas.width, canvas.height);
         for (const command of commands){
-            command.display(ctx);
+            command.display(context);
         }
     }
 }
@@ -386,12 +388,17 @@ const buttons:button[] = [
         callback: ()=> {
             const anchor = document.createElement("a");
             const tempCanvas = document.createElement("canvas");
-            const ctx = tempCanvas.getContext("2d");
-            if(ctx){
-                ctx.scale(4,4);
+            anchor.append(tempCanvas);
+            const tempCtx = tempCanvas.getContext("2d");
+            if(tempCtx){
+                tempCanvas.width = 1024;
+                tempCanvas.height = 1024;
+                tempCtx.scale(4,4);
+                DisplayCommands(tempCtx);
+                anchor.href = tempCanvas.toDataURL("image/png");
+                anchor.download = "sketchpad.png";
+                anchor.click();
             }
-            tempCanvas.width = 1024;
-            tempCanvas.height = 1024;
         }
     }
 ];
