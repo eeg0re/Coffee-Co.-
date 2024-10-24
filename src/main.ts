@@ -360,6 +360,40 @@ const buttons:button[] = [
             stickerMode = true;
         },
     },
+    {
+        label: "Add your own sticker",
+        color: '',
+        type: "functional",
+        callback: ()=> {
+            const newSticker = prompt("type an emoji here: ");
+            if(newSticker && newSticker != ''){
+                const toolNum: number = toolList.length; 
+                toolList.push(createSticker(newSticker));
+                MakeButton({ label: newSticker, color: '', type: 'tool', 
+                    callback: () => {
+                    currentLineWidth = 5;
+                    currentTool = toolList[toolNum];
+                    checkText(htmlButtons, newSticker);
+                    stickerMode = true;
+                },});
+            }
+        }
+    },
+    {
+        label: "export",
+        color: '',
+        type: 'functional',
+        callback: ()=> {
+            const anchor = document.createElement("a");
+            const tempCanvas = document.createElement("canvas");
+            const ctx = tempCanvas.getContext("2d");
+            if(ctx){
+                ctx.scale(4,4);
+            }
+            tempCanvas.width = 1024;
+            tempCanvas.height = 1024;
+        }
+    }
 ];
 
 // use this function to turn buttons from one color to another
@@ -397,26 +431,3 @@ function MakeButton(buttn: button): HTMLButtonElement{
 }
 
 htmlButtons = MakeButtonsFromList(buttons);
-app.append(document.createElement("br"));
-
-const addMore = document.createElement("button");
-addMore.innerHTML = "Add your own sticker";
-app.append(addMore);
-addMore.addEventListener('click', () => {
-    const newSticker = prompt("type an emoji here: ");
-    if(newSticker && newSticker != ''){
-        const toolNum: number = toolList.length; 
-        toolList.push(createSticker(newSticker));
-        MakeButton({
-            label: newSticker,
-            color: '',
-            type: 'tool', 
-            callback: () => {
-                currentLineWidth = 5;
-                currentTool = toolList[toolNum];
-                checkText(htmlButtons, newSticker);
-                stickerMode = true;
-            },
-        });
-    }
-});
