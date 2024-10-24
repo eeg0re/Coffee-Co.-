@@ -12,6 +12,26 @@ const header = document.createElement("h1");
 header.innerHTML = "Digital Doodler";
 app.append(header);
 
+// add color/rotation slider 
+const valueSlider = document.createElement("input");
+valueSlider.type = "range";
+valueSlider.min = "0";
+valueSlider.max = "360";
+valueSlider.value = "0";
+valueSlider.step = "1";
+app.append(valueSlider);
+valueSlider.addEventListener('input', (event)=> {
+    const value = (event.target as HTMLInputElement).value;
+    if(stickerMode){
+        currentRotation = Number(value);
+    }
+    else{
+        currentColor = `hsl(${value}, 100%, 50%)`;
+        valueSlider.style.background = currentColor;
+    }
+});
+app.append(document.createElement("br"));
+
 // add a canvas
 const canvas = document.createElement("canvas");
 canvas.width = 256;
@@ -30,6 +50,9 @@ const cursor = {
 let stickerMode: boolean = false;
 
 const bttnColor: string = "#29415c";
+
+let currentColor: string = `hsl(${valueSlider.value}, 100%, 0%)`;
+let currentRotation: number = 0;
 
 interface Tool{
     preview(context: CanvasRenderingContext2D): void,
@@ -55,9 +78,9 @@ function createMarker(lineWidth:number): Marker{
         preview(context: CanvasRenderingContext2D){
             if(context){
                 DisplayCommands(context);
-        
                 context.beginPath();
                 context.strokeStyle = 'rgba(0,0,0,0.5)';
+                context.strokeStyle = currentColor;
                 context.arc(cursor.x, cursor.y, currentLineWidth/2, 0, Math.PI * 2);
                 context.lineWidth = currentLineWidth;
                 context.stroke();
@@ -74,7 +97,7 @@ function createSticker(sticker:string): Sticker{
             context.globalAlpha = 0.2;
             context.fillStyle = "#000000";
             context.translate(cursor.x,cursor.y);
-            context.rotate(0);
+            context.rotate(currentRotation * Math.PI / 180 );
             context.font = `${currentLineWidth * 4}px monospace`;
             context.fillText(sticker, - currentLineWidth / 1.1, currentLineWidth);
             context.globalAlpha = 1;
@@ -104,20 +127,23 @@ interface drawableCMD{
     display(context: CanvasRenderingContext2D): void,
     drag(x:number, y:number): void,
     lineWidth: number,
+    sliderVal: string | number,
 };
 
 // factory function for making drawableLines
-function createDrawableLine(initX: number, initY: number, lineWidth: number, sticker: string): drawableCMD{
+function createDrawableCMD(initX: number, initY: number, lineWidth: number, sticker: string, slide: string | number): drawableCMD{
     if(!stickerMode){
         const points: point[] = [{x: initX, y: initY}];
         return {
             points, 
             lineWidth,
             sticker: '', 
+            sliderVal: slide,
             drag(x:number, y:number){
                 points.push({x, y});
                 if(ctx){
                     ctx.beginPath();
+                    ctx.strokeStyle = String(this.sliderVal); 
                     if(currentLine.points.length > 1){
                         const len = currentLine.points.length;
                         ctx.moveTo(currentLine.points[len-2].x, currentLine.points[len - 2].y);
@@ -129,6 +155,7 @@ function createDrawableLine(initX: number, initY: number, lineWidth: number, sti
             display(context: CanvasRenderingContext2D){
                 if(this.points.length > 1){
                     context.beginPath();
+                    context.strokeStyle = String(this.sliderVal);
                     const firstPoint:point = this.points[0];
                     context.moveTo(firstPoint.x, firstPoint.y);
                     for (const point of this.points){
@@ -146,26 +173,29 @@ function createDrawableLine(initX: number, initY: number, lineWidth: number, sti
             points,
             lineWidth, 
             sticker, 
+            sliderVal: slide,
             drag(x: number, y: number){
                 if(ctx && currentTool){ // we dont want to check current tool
                     points[0].x = x;
                     points[0].y = y;
                     DisplayCommands(ctx);
-                    drawSticker(ctx, this.sticker, points[0].x, points[0].y, this.lineWidth);
+                    drawSticker(ctx, this.sticker, points[0].x, points[0].y, this.lineWidth, Number(this.sliderVal));
                 }
             },
             display(context: CanvasRenderingContext2D){
-                drawSticker(context, this.sticker, points[0].x, points[0].y, this.lineWidth);
+                drawSticker(context, this.sticker, points[0].x, points[0].y, this.lineWidth, Number(this.sliderVal));
             }
         }
     }
 }
 
-function drawSticker(ctx: CanvasRenderingContext2D, sticker: string, x: number, y: number, lineWidth: number){
+function drawSticker(ctx: CanvasRenderingContext2D, sticker: string, x: number, y: number, lineWidth: number, rotation: number){
     ctx.save();
     ctx.fillStyle = "#000000";
+    ctx.translate(x,y);
+    ctx.rotate(rotation * Math.PI / 180);
     ctx.font = `${lineWidth * 4}px monospace`;
-    ctx.fillText(sticker, x, y);
+    ctx.fillText(sticker, 0, 0);
     ctx.restore();
 }
 
@@ -179,10 +209,10 @@ canvas.addEventListener("mousedown", (event)=>{
     cursor.y = event.offsetY;
 
     if(currentTool && "sticker" in currentTool){
-        currentLine = createDrawableLine(cursor.x, cursor.y, currentLineWidth, currentTool.sticker);
+        currentLine = createDrawableCMD(cursor.x, cursor.y, currentLineWidth, currentTool.sticker, currentRotation);
     }
     else{
-        currentLine = createDrawableLine(cursor.x, cursor.y, currentLineWidth, '');
+        currentLine = createDrawableCMD(cursor.x, cursor.y, currentLineWidth, '', currentColor);
     }
 
     commands.push(currentLine);
