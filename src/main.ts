@@ -29,6 +29,8 @@ const cursor = {
 
 let stickerMode: boolean = false;
 
+const bttnColor: string = "#29415c";
+
 interface Tool{
     preview(context: CanvasRenderingContext2D): void,
 }
@@ -258,22 +260,22 @@ let htmlButtons:HTMLButtonElement[] = [];
 
 const buttons:button[] = [
     {
-        label: "Thin marker",
-        color: "#29415c",
+        label: "o",
+        color: bttnColor,
         type: "tool",
         callback: () => {
-            currentLineWidth = 1;
+            currentLineWidth = 2;
             currentTool = toolList[0];
             checkText(htmlButtons, "Thin marker");
             stickerMode = false;
         },
     },
     {
-        label: "Thick marker",
+        label: "O",
         color: '',
         type: "tool",
         callback: () => {
-            currentLineWidth = 3;
+            currentLineWidth = 5;
             currentTool = toolList[1];
             checkText(htmlButtons, "Thick marker");
             stickerMode = false;
@@ -323,7 +325,7 @@ const buttons:button[] = [
         color: "",
         type: "tool",
         callback: () => {
-            currentLineWidth = 5;
+            currentLineWidth = 7;
             currentTool = toolList[2];
             checkText(htmlButtons, "🐵");
             stickerMode = true;
@@ -334,7 +336,7 @@ const buttons:button[] = [
         color: "",
         type: "tool",
         callback: () => {
-            currentLineWidth = 5;
+            currentLineWidth = 7;
             currentTool = toolList[3];
             checkText(htmlButtons, "🖐️");
             stickerMode = true;
@@ -345,7 +347,7 @@ const buttons:button[] = [
         color: "",
         type: "tool",
         callback: () => {
-            currentLineWidth = 5;
+            currentLineWidth = 7;
             currentTool = toolList[4];
             checkText(htmlButtons, "🌳");
             stickerMode = true;
@@ -356,7 +358,7 @@ const buttons:button[] = [
         color: "",
         type: "tool",
         callback: () => {
-            currentLineWidth = 5;
+            currentLineWidth = 7;
             currentTool = toolList[5];
             checkText(htmlButtons, "💥");
             stickerMode = true;
@@ -407,7 +409,7 @@ const buttons:button[] = [
 function checkText(buttons: HTMLButtonElement[], text: string){
     for(let i = 0; i < htmlButtons.length; i++){
         if(buttons[i].innerHTML == text){
-            buttons[i].style.backgroundColor = "#29415c"
+            buttons[i].style.backgroundColor = bttnColor
         }
         else{
            buttons[i].style.backgroundColor = '';
