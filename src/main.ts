@@ -60,7 +60,7 @@ const redoCommands: drawableCMD[] = []; // array used for redoing
 let currentLine: drawableCMD; // array of points on current line
 
 //marker widths and stickerEmojis
-const MARKERLINEWIDTHS = [1, 3];
+const MARKERLINEWIDTHS = [2, 5];
 const STICKEREMOJIS = ["🐵", "🖐️", "🌳", "💥"];
 
 function createMarker(lineWidth: number): Marker {
@@ -204,7 +204,8 @@ function drawSticker(
   ctx.restore();
 }
 
-let currentLineWidth = 1;
+let currentLineWidth = MARKERLINEWIDTHS[0];
+currentTool = toolList[0];
 
 // -------------- add event listeners to the canvas --------------------
 canvas.addEventListener("mousedown", (event) => {
@@ -259,6 +260,11 @@ canvas.addEventListener("mousemove", (event) => {
 canvas.addEventListener("mouseup", () => {
   cursor.active = false;
   NotifyChange();
+});
+
+canvas.addEventListener("mouseout", () => {
+  [cursor.x, cursor.y, cursor.active] = [NaN, NaN, false];
+  canvas.dispatchEvent(new Event("tool moved"));
 });
 
 canvas.addEventListener("drawing changed", () => {
@@ -318,13 +324,23 @@ const buttons: button[] = [
     label: "o",
     color: bttnColor,
     type: "tool",
-    callback: createToolCallback(2, toolList[0], true, "Thin marker"),
+    callback: createToolCallback(
+      MARKERLINEWIDTHS[0],
+      toolList[0],
+      false,
+      "Thin marker",
+    ),
   },
   {
     label: "O",
     color: "",
     type: "tool",
-    callback: createToolCallback(5, toolList[1], false, "Thick marker"),
+    callback: createToolCallback(
+      MARKERLINEWIDTHS[1],
+      toolList[1],
+      false,
+      "Thick marker",
+    ),
   },
   {
     label: "Clear",
