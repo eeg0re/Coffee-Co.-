@@ -106,102 +106,94 @@ STICKEREMOJIS.forEach((emoji) => {
   toolList.push(createSticker(emoji));
 });
 
-// factory function for making drawableLines
-function createDrawableCMD(
-  initX: number,
-  initY: number,
-  lineWidth: number,
-  sticker: string,
-  slide: string | number,
-): drawableCMD {
-  if (!stickerMode) {
-    const points: point[] = [{ x: initX, y: initY }];
-    return {
-      points,
-      lineWidth,
-      sticker: "",
-      sliderVal: slide,
-      drag(x: number, y: number) {
-        points.push({ x, y });
-        if (ctx) {
-          ctx.beginPath();
-          ctx.strokeStyle = String(this.sliderVal);
-          if (currentLine.points.length > 1) {
-            const len = currentLine.points.length;
-            ctx.moveTo(
-              currentLine.points[len - 2].x,
-              currentLine.points[len - 2].y,
-            );
-            ctx.lineTo(cursor.x, cursor.y);
-            ctx.stroke();
-          }
-        }
-      },
-      display(context: CanvasRenderingContext2D) {
-        if (this.points.length > 1) {
-          context.beginPath();
-          context.strokeStyle = String(this.sliderVal);
-          const firstPoint: point = this.points[0];
-          context.moveTo(firstPoint.x, firstPoint.y);
-          for (const point of this.points) {
-            context.lineTo(point.x, point.y);
-          }
-          context.lineWidth = this.lineWidth;
-          context.stroke();
-        }
-      },
-    };
-  } else {
-    const points = [{ x: initX, y: initY }];
-    return {
-      points,
-      lineWidth,
-      sticker,
-      sliderVal: slide,
-      drag(x: number, y: number) {
-        if (ctx && currentTool) { // we dont want to check current tool
-          points[0].x = x;
-          points[0].y = y;
-          DisplayCommands(ctx);
-          drawSticker(
-            ctx,
-            this.sticker,
-            points[0].x,
-            points[0].y,
-            this.lineWidth,
-            Number(this.sliderVal),
-          );
-        }
-      },
-      display(context: CanvasRenderingContext2D) {
-        drawSticker(
-          context,
-          this.sticker,
-          points[0].x,
-          points[0].y,
-          this.lineWidth,
-          Number(this.sliderVal),
-        );
-      },
-    };
+class LineCMD implements drawableCMD {
+  initX : number;
+  initY : number;
+  lineWidth: number;
+  sticker: string;
+  sliderVal: string | number;
+  points: point[]; 
+
+
+  constructor(initX: number, initY: number, lineWidth: number, sticker: string, slide: string | number) {
+    this.initY = initY;
+    this.initX = initX;
+    this.lineWidth = lineWidth;
+    this.sticker = sticker;
+    this.sliderVal = slide;
+    this.points = [{ x: initX, y: initY }];
   }
+
+  drag(x: number, y: number) {
+    this.points.push({ x, y });
+    if (ctx) {
+      ctx.beginPath();
+      ctx.strokeStyle = String(this.sliderVal);
+      ctx.lineWidth = this.lineWidth;
+      if (this.points.length > 1) {
+        const len = this.points.length;
+        ctx.moveTo(
+          this.points[len - 2].x,
+          this.points[len - 2].y,
+        );
+        ctx.lineTo(cursor.x, cursor.y);
+        ctx.stroke();
+      }
+    }
+  }
+
+  display(context: CanvasRenderingContext2D) {
+    if (this.points.length > 1) {
+      context.beginPath();
+      context.strokeStyle = String(this.sliderVal);
+      context.lineWidth = this.lineWidth;
+      const firstPoint: point = this.points[0];
+      context.moveTo(firstPoint.x, firstPoint.y);
+      for (const point of this.points) {
+        context.lineTo(point.x, point.y);
+      }
+      context.stroke();
+    }
+  }
+  
 }
 
-function drawSticker(
-  ctx: CanvasRenderingContext2D,
-  sticker: string,
-  x: number,
-  y: number,
-  lineWidth: number,
-  rotation: number,
-) {
-  ctx.save();
-  ctx.fillStyle = "#000000";
-  ctx.translate(x, y);
-  ctx.rotate(rotation * Math.PI / 180);
-  ctx.font = `${lineWidth * 4}px monospace`;
-  ctx.fillText(sticker, 0, 0);
-  ctx.restore();
+class StickerCMD implements drawableCMD {
+  initX : number;
+  initY : number;
+  lineWidth: number;
+  sticker: string;
+  sliderVal: string | number;
+  point: point; 
+
+
+  constructor(initX: number, initY: number, lineWidth: number, sticker: string, slide: string | number) {
+    this.initY = initY;
+    this.initX = initX;
+    this.lineWidth = lineWidth;
+    this.sticker = sticker;
+    this.sliderVal = slide;
+    this.point = { x: initX, y: initY };
+  }
+
+  drag(x: number, y: number) {
+    if (ctx && currentTool) { // we dont want to check current tool
+      this.point = {x, y};
+      this.display(ctx);
+    }
+  }
+
+  display(ctx: CanvasRenderingContext2D) {{
+      ctx.save();
+      ctx.fillStyle = "#000000";
+      ctx.translate(this.point.x, this.point.y);
+      ctx.rotate(Number(this.sliderVal) * Math.PI / 180);
+      ctx.font = `${this.lineWidth * 4}px monospace`;
+      ctx.fillText(this.sticker, 0, 0);
+      ctx.restore();
+    }
+  }
+  
 }
 
 let currentLineWidth = MARKERLINEWIDTHS[0];
@@ -215,7 +207,7 @@ canvas.addEventListener("mousedown", (event) => {
   cursor.y = event.offsetY;
 
   if (currentTool && "sticker" in currentTool) {
-    currentLine = createDrawableCMD(
+    currentLine = new StickerCMD(
       cursor.x,
       cursor.y,
       currentLineWidth,
@@ -223,7 +215,7 @@ canvas.addEventListener("mousedown", (event) => {
       currentRotation,
     );
   } else {
-    currentLine = createDrawableCMD(
+    currentLine = new LineCMD(
       cursor.x,
       cursor.y,
       currentLineWidth,
@@ -234,7 +226,6 @@ canvas.addEventListener("mousedown", (event) => {
 
   commands.push(currentLine);
   redoCommands.splice(0, redoCommands.length);
-  currentLine.points.push({ x: cursor.x, y: cursor.y });
   NotifyChange();
 });
 

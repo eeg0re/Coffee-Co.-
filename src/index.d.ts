@@ -18,7 +18,6 @@ interface point {
 
 // make an interface with commands display/drag methods
 interface drawableCMD {
-  points: point[];
   sticker: string;
   display(context: CanvasRenderingContext2D): void;
   drag(x: number, y: number): void;
