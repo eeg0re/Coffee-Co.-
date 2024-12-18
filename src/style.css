@@ -42,6 +42,14 @@ h1 {
   text-align: center;
 }
 
+#inventory {
+  max-width: 1280px;
+  display: grid;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;
