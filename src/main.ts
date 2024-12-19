@@ -1,8 +1,9 @@
 import "./style.css";
 
 let drinkCounter: number = 0;
+let playerMoney: number = 0;
 let brewRate: number = 1;
-const _sellPrice: number = 1;
+const sellPrice: number = 1;
 const COST_MULTIPLIER = 1.15;
 
 interface Upgrade {
@@ -17,7 +18,6 @@ interface Upgrade {
 }
 
 const shop = document.querySelector<HTMLDivElement>("#shop")!;
-//const shop = document.createElement("div");
 
 const upgrades: Upgrade[] = [
   {
@@ -113,6 +113,8 @@ function CreateUpgrades(upgradeList: Upgrade[]) {
 function UpdateInventory() {
   const drinkStr: string = drinkCounter.toFixed(1);
   inventory.innerHTML = `Drinks Brewed: ` + drinkStr;
+  wallet.innerHTML = `Money: ` + playerMoney.toFixed(2);
+  inventory.append(wallet);
 }
 
 function IncreaseClickCounter() {
@@ -122,8 +124,7 @@ function IncreaseClickCounter() {
 
 function ActivateUpgrade(button: HTMLButtonElement, buttonInfo: Upgrade) {
   if (CheckFunds(button, buttonInfo)) {
-    console.log(buttonInfo.label + " purchased");
-    drinkCounter -= buttonInfo.cost;
+    playerMoney -= buttonInfo.cost;
     buttonInfo.amountBought += 1;
     buttonInfo.cost *= COST_MULTIPLIER; // increase the cost by a little bit
     brewRate += buttonInfo.rate;
@@ -138,7 +139,7 @@ function ActivateUpgrade(button: HTMLButtonElement, buttonInfo: Upgrade) {
 
 function CheckFunds(button: HTMLButtonElement, buttonInfo: Upgrade): boolean {
   const cost = buttonInfo.cost;
-  if (drinkCounter >= cost) {
+  if (playerMoney >= cost) {
     button.disabled = false;
     return true;
   } else {
@@ -188,6 +189,9 @@ app.append(header);
 const inventory = document.createElement("div");
 inventory.innerHTML = "Drinks Brewed: 0";
 app.append(inventory);
+const wallet = document.createElement("div");
+inventory.appendChild(wallet);
+wallet.innerHTML = "Money: 0";
 app.append(document.createElement("br"));
 
 // our main button for brewing coffee
@@ -203,14 +207,18 @@ mainClicker.style.boxShadow = "5px 5px 15px rgba(0, 0, 0, 0.3)";
 mainClicker.addEventListener("click", IncreaseClickCounter);
 
 const sellButton = document.createElement("button");
-sellButton.innerHTML = "Sell Drinks";
+sellButton.innerHTML = "Sell";
 app.append(sellButton);
 sellButton.style.borderRadius = "50%";
-sellButton.style.width = "100px";
-sellButton.style.height = "100px";
+sellButton.style.width = "75px";
+sellButton.style.height = "75px";
+sellButton.addEventListener("click", () => {
+  playerMoney += drinkCounter * sellPrice;
+  drinkCounter = 0;
+  UpdateInventory();
+});
 
 app.append(document.createElement("br"));
-//app.append(shop);
 
 function StartGame() {
   CreateUpgrades(upgrades);
