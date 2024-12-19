@@ -17,6 +17,7 @@ interface Upgrade {
 }
 
 const shop = document.querySelector<HTMLDivElement>("#shop")!;
+//const shop = document.createElement("div");
 
 const upgrades: Upgrade[] = [
   {
@@ -41,7 +42,7 @@ const upgrades: Upgrade[] = [
       "Increases the value of each drink you brew. Drinks now sell for an extra $0.10",
     amountBought: 0,
     callback: () => {
-      console.log("Upgrade 2 purchased");
+      ActivateUpgrade(upgradeButtons[1], upgrades[1]);
     },
   },
   {
@@ -53,7 +54,7 @@ const upgrades: Upgrade[] = [
     description: "Automatically brews 3 drinks per second",
     amountBought: 0,
     callback: () => {
-      console.log("Upgrade 3 purchased");
+      ActivateUpgrade(upgradeButtons[2], upgrades[2]);
     },
   },
 ];
@@ -183,8 +184,11 @@ header.innerHTML = GAME_NAME;
 app.append(header);
 
 // portion of the UI that displays the inventory
-const inventory = document.querySelector<HTMLDivElement>("#inventory")!;
+//const inventory = document.querySelector<HTMLDivElement>("#inventory")!;
+const inventory = document.createElement("div");
 inventory.innerHTML = "Drinks Brewed: 0";
+app.append(inventory);
+app.append(document.createElement("br"));
 
 // our main button for brewing coffee
 const mainClicker = document.createElement("button");
@@ -197,6 +201,16 @@ mainClicker.style.fontSize = "60px";
 mainClicker.style.borderRadius = "50%";
 mainClicker.style.boxShadow = "5px 5px 15px rgba(0, 0, 0, 0.3)";
 mainClicker.addEventListener("click", IncreaseClickCounter);
+
+const sellButton = document.createElement("button");
+sellButton.innerHTML = "Sell Drinks";
+app.append(sellButton);
+sellButton.style.borderRadius = "50%";
+sellButton.style.width = "100px";
+sellButton.style.height = "100px";
+
+app.append(document.createElement("br"));
+//app.append(shop);
 
 function StartGame() {
   CreateUpgrades(upgrades);
