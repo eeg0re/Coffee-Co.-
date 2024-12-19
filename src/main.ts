@@ -51,9 +51,12 @@ const upgrades: Upgrade[] = [
   },
 ];
 
+const upgradeButtons: HTMLButtonElement[] = [];
+
 function CreateUpgrades(upgradeList: Upgrade[]) {
   upgradeList.forEach((upgrade) => {
     const button = CreateUpradeButton(upgrade);
+    upgradeButtons.push(button);
     shop.append(button);
   });
 }
@@ -74,6 +77,22 @@ function UpdateInventory() {
 function IncreaseClickCounter() {
   drinkCounter++;
   UpdateInventory();
+}
+
+function CheckFunds(button: HTMLButtonElement, buttonInfo: Upgrade): boolean {
+  const cost = buttonInfo.cost;
+  if (drinkCounter >= cost) {
+    button.disabled = false;
+    return true;
+  } else {
+    button.disabled = true;
+    return false;
+  }
+}
+function CheckAllUpgradePrices() {
+  for (let i = 0; i < upgradeButtons.length; i++) {
+    CheckFunds(upgradeButtons[i], upgrades[i]);
+  }
 }
 
 const GAME_NAME = "Coffee Co.";
@@ -103,6 +122,7 @@ mainClicker.addEventListener("click", IncreaseClickCounter);
 
 function main() {
   CreateUpgrades(upgrades);
+  setInterval(CheckAllUpgradePrices, 0);
 }
 
 main();
