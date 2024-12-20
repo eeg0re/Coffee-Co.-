@@ -2,16 +2,15 @@ import "./style.css";
 
 let drinkCounter: number = 0;
 let playerMoney: number = 0;
-let brewRate: number = 1;
+let brewRate: number = 0;
 let sellPrice: number = 1;
 const COST_MULTIPLIER = 1.15;
 
 interface Upgrade {
-  name: string;
   label: string;
   type: string;
   cost: number;
-  rate: number;
+  amount: number;
   description: string;
   amountBought: number;
   callback: () => void;
@@ -21,37 +20,36 @@ const shop = document.querySelector<HTMLDivElement>("#shop")!;
 
 const upgrades: Upgrade[] = [
   {
-    name: "Upgrade 1",
-    label: "Upgrade 1",
-    type: "auto",
-    cost: 10,
-    rate: 1,
-    description: "Automatically brews 1 drink per second",
+    label: "French Roast Coffee",
+    type: "increase",
+    cost: 25,
+    amount: 0.10,
+    description:
+      "Higher quality coffee beans. Drinks now sell for an extra $0.10.",
     amountBought: 0,
     callback: () => {
       ActivateUpgrade(upgradeButtons[0], upgrades[0]);
     },
   },
   {
-    name: "Upgrade 2",
-    label: "Upgrade 2",
-    type: "increase",
-    cost: 20,
-    rate: -1,
+    label: "Cashier",
+    type: "auto",
+    cost: 100,
+    amount: 0.25,
     description:
-      "Increases the value of each drink you brew. Drinks now sell for an extra $0.10",
+      "Hire a cashier to help with some of your responsibilities. Automatically brews a cup of coffee every 4 seconds.",
     amountBought: 0,
     callback: () => {
       ActivateUpgrade(upgradeButtons[1], upgrades[1]);
     },
   },
   {
-    name: "Upgrade 3",
-    label: "Upgrade 3",
-    type: "auto",
-    cost: 30,
-    rate: 3,
-    description: "Automatically brews 3 drinks per second",
+    label: "Tea",
+    type: "increase",
+    cost: 200,
+    amount: 0.75,
+    description:
+      "Offer complementary tea to your customers. Drinks now sell for an extra $0.75.",
     amountBought: 0,
     callback: () => {
       ActivateUpgrade(upgradeButtons[2], upgrades[2]);
@@ -65,10 +63,11 @@ function MakeToolTip(button: HTMLButtonElement, buttonInfo: Upgrade) {
 
   if (buttonInfo.type === "auto") {
     tooltip.textContent =
-      `Cost: ${upgradeCost}. Rate: ${buttonInfo.rate.toFixed(1)}. ` +
-      buttonInfo.description;
+      `$${upgradeCost}. Rate: ${buttonInfo.amount.toFixed(2)}. ` +
+      buttonInfo.description + ` (Times bought: ${buttonInfo.amountBought})`;
   } else {
-    tooltip.textContent = `Cost: ${upgradeCost}. ` + buttonInfo.description;
+    tooltip.textContent = `$${upgradeCost}. ` + buttonInfo.description +
+      ` (Times bought: ${buttonInfo.amountBought})`;
   }
 
   tooltip.style.position = "absolute";
@@ -118,7 +117,7 @@ function CreateUpgrades(upgradeList: Upgrade[]) {
 function UpdateInventory() {
   const drinkStr: string = drinkCounter.toFixed(1);
   inventory.innerHTML = `Drinks Brewed: ` + drinkStr;
-  wallet.innerHTML = `Money: ` + playerMoney.toFixed(2);
+  wallet.innerHTML = `Money: $` + playerMoney.toFixed(2);
   inventory.append(wallet);
 }
 
@@ -133,10 +132,11 @@ function ActivateAutoUpgrade(
 ): void {
   if (CheckFunds(button, buttonInfo)) {
     buttonInfo.amountBought += 1;
-    brewRate += buttonInfo.rate;
+    brewRate += buttonInfo.amount;
     playerMoney -= buttonInfo.cost;
     buttonInfo.cost *= COST_MULTIPLIER;
     MakeToolTip(button, buttonInfo);
+    UpdateInventory();
   }
   if (buttonInfo.amountBought >= 1) {
     requestAnimationFrame(function (timestamp: number) {
@@ -151,10 +151,11 @@ function ActivateIncreaseUpgrade(
 ): void {
   if (CheckFunds(button, buttonInfo)) {
     buttonInfo.amountBought += 1;
-    sellPrice += buttonInfo.rate;
+    sellPrice += buttonInfo.amount;
     playerMoney -= buttonInfo.cost;
     buttonInfo.cost *= COST_MULTIPLIER;
     MakeToolTip(button, buttonInfo);
+    UpdateInventory();
   }
 }
 
@@ -199,7 +200,7 @@ function step(timestamp: number, buttonInfo: Upgrade) {
   prevTime = timestamp;
 
   // time is in milliseconds, so we divide elapsed by 1000 to get the correct unit
-  const increment = (elapsed / 1000) * brewRate; // multiply the increment by this item's growth rate and the number of that item
+  const increment = (elapsed / 1000) * brewRate; // multiply the increment by this item's growth amount and the number of that item
   drinkCounter += increment;
   UpdateInventory();
 
@@ -225,7 +226,7 @@ inventory.innerHTML = "Drinks Brewed: 0";
 app.append(inventory);
 const wallet = document.createElement("div");
 inventory.appendChild(wallet);
-wallet.innerHTML = "Money: 0";
+wallet.innerHTML = `Money: $${playerMoney.toFixed(2)}`;
 app.append(document.createElement("br"));
 
 // our main button for brewing coffee
