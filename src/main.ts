@@ -3,7 +3,7 @@ import "./style.css";
 let drinkCounter: number = 0;
 let playerMoney: number = 0;
 let brewRate: number = 1;
-const sellPrice: number = 1;
+let sellPrice: number = 1;
 const COST_MULTIPLIER = 1.15;
 
 interface Upgrade {
@@ -61,11 +61,16 @@ const upgrades: Upgrade[] = [
 
 function MakeToolTip(button: HTMLButtonElement, buttonInfo: Upgrade) {
   const tooltip = document.createElement("div");
-  tooltip.textContent =
-    `Cost: ${buttonInfo.cost.toFixed(1)}. Rate: ${
-      buttonInfo.rate.toFixed(1)
-    }. ` +
-    buttonInfo.description;
+  const upgradeCost = buttonInfo.cost.toFixed(1);
+
+  if (buttonInfo.type === "auto") {
+    tooltip.textContent =
+      `Cost: ${upgradeCost}. Rate: ${buttonInfo.rate.toFixed(1)}. ` +
+      buttonInfo.description;
+  } else {
+    tooltip.textContent = `Cost: ${upgradeCost}. ` + buttonInfo.description;
+  }
+
   tooltip.style.position = "absolute";
   tooltip.style.backgroundColor = "black";
   tooltip.style.padding = "5px";
@@ -122,18 +127,47 @@ function IncreaseClickCounter() {
   UpdateInventory();
 }
 
-function ActivateUpgrade(button: HTMLButtonElement, buttonInfo: Upgrade) {
+function ActivateAutoUpgrade(
+  button: HTMLButtonElement,
+  buttonInfo: Upgrade,
+): void {
   if (CheckFunds(button, buttonInfo)) {
-    playerMoney -= buttonInfo.cost;
     buttonInfo.amountBought += 1;
-    buttonInfo.cost *= COST_MULTIPLIER; // increase the cost by a little bit
     brewRate += buttonInfo.rate;
+    playerMoney -= buttonInfo.cost;
+    buttonInfo.cost *= COST_MULTIPLIER;
     MakeToolTip(button, buttonInfo);
   }
   if (buttonInfo.amountBought >= 1) {
     requestAnimationFrame(function (timestamp: number) {
       step(timestamp, buttonInfo);
     });
+  }
+}
+
+function ActivateIncreaseUpgrade(
+  button: HTMLButtonElement,
+  buttonInfo: Upgrade,
+): void {
+  if (CheckFunds(button, buttonInfo)) {
+    buttonInfo.amountBought += 1;
+    sellPrice += buttonInfo.rate;
+    playerMoney -= buttonInfo.cost;
+    buttonInfo.cost *= COST_MULTIPLIER;
+    MakeToolTip(button, buttonInfo);
+  }
+}
+
+function ActivateUpgrade(button: HTMLButtonElement, buttonInfo: Upgrade): void {
+  switch (buttonInfo.type) {
+    case "auto":
+      ActivateAutoUpgrade(button, buttonInfo);
+      break;
+    case "increase":
+      ActivateIncreaseUpgrade(button, buttonInfo);
+      break;
+    default:
+      break;
   }
 }
 
