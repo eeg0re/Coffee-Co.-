@@ -69,6 +69,17 @@ const upgrades: Upgrade[] = [
   },
 ];
 
+function createInventoryUI(): HTMLDivElement {
+  const inventory = document.createElement("div");
+  inventory.innerHTML = "Drinks Brewed: 0";
+  app.append(inventory);
+  const wallet = document.createElement("div");
+  inventory.appendChild(wallet);
+  wallet.innerHTML = `Money: $${playerMoney.toFixed(2)}`;
+  app.append(document.createElement("br"));
+  return inventory;
+}
+
 function UpdateToolTip(
   button: HTMLButtonElement,
   tooltip: HTMLDivElement,
@@ -133,7 +144,7 @@ function UpdateInventory() {
   inventory.append(wallet);
 }
 
-function IncreaseClickCounter() {
+function IncreaseDrinkCount() {
   drinkCounter++;
   UpdateInventory();
 }
@@ -213,14 +224,8 @@ const header = document.createElement("h3");
 header.innerHTML = GAME_NAME;
 app.append(header);
 
-// portion of the UI that displays the inventory
-const inventory = document.createElement("div");
-inventory.innerHTML = "Drinks Brewed: 0";
-app.append(inventory);
-const wallet = document.createElement("div");
-inventory.appendChild(wallet);
-wallet.innerHTML = `Money: $${playerMoney.toFixed(2)}`;
-app.append(document.createElement("br"));
+const inventory = createInventoryUI();
+const wallet = inventory.querySelector<HTMLDivElement>("div")!;
 
 // our main button for brewing coffee
 const mainClicker = document.createElement("button");
@@ -232,7 +237,7 @@ mainClicker.style.height = "200px";
 mainClicker.style.fontSize = "60px";
 mainClicker.style.borderRadius = "50%";
 mainClicker.style.boxShadow = "5px 5px 15px rgba(0, 0, 0, 0.3)";
-mainClicker.addEventListener("click", IncreaseClickCounter);
+mainClicker.addEventListener("click", IncreaseDrinkCount);
 
 const sellButton = document.createElement("button");
 sellButton.innerHTML = "Sell";
