@@ -69,6 +69,24 @@ const upgrades: Upgrade[] = [
   },
 ];
 
+function UpdateToolTip(
+  button: HTMLButtonElement,
+  tooltip: HTMLDivElement,
+) {
+  //const tooltip = MakeToolTip(button, upgrade);
+  button.addEventListener("mouseenter", () => {
+    tooltip.style.display = "block";
+  }); // show on hover
+  button.addEventListener("mouseleave", () => {
+    tooltip.style.display = "none";
+  }); // hide when we leave
+  button.addEventListener("mousemove", (event) => {
+    // position the tooltip next to the cursor
+    tooltip.style.left = `${event.pageX + 10}px`;
+    tooltip.style.top = `${event.pageY + 10}px`;
+  });
+}
+
 function MakeToolTip(button: HTMLButtonElement, buttonInfo: Upgrade) {
   const tooltip = document.createElement("div");
   const upgradeCost = buttonInfo.cost.toFixed(1);
@@ -88,19 +106,7 @@ function MakeToolTip(button: HTMLButtonElement, buttonInfo: Upgrade) {
   tooltip.style.borderRadius = "4px";
   tooltip.style.display = "none"; // tooltip will be hidden initially
   app.append(tooltip);
-
-  // add event listeners to the existing button so we can display this tooltip
-  button.addEventListener("mouseenter", () => {
-    tooltip.style.display = "block";
-  }); // show on hover
-  button.addEventListener("mouseleave", () => {
-    tooltip.style.display = "none";
-  }); // hide when we leave
-  button.addEventListener("mousemove", (event) => {
-    // position the tooltip next to the cursor
-    tooltip.style.left = `${event.pageX + 10}px`;
-    tooltip.style.top = `${event.pageY + 10}px`;
-  });
+  UpdateToolTip(button, tooltip);
 
   return tooltip;
 }
@@ -111,7 +117,6 @@ function CreateUpradeButton(upgrade: Upgrade) {
   const button = document.createElement("button");
   button.innerHTML = upgrade.label;
   MakeToolTip(button, upgrade);
-
   button.addEventListener("click", () => {
     upgrade.callback();
   });
@@ -127,8 +132,7 @@ function CreateUpgrades(upgradeList: Upgrade[]) {
 }
 
 function UpdateInventory() {
-  const drinkStr: string = drinkCounter.toFixed(1);
-  inventory.innerHTML = `Drinks Brewed: ` + drinkStr;
+  inventory.innerHTML = `Drinks Brewed: ` + drinkCounter.toFixed(1);
   wallet.innerHTML = `Money: $` + playerMoney.toFixed(2);
   inventory.append(wallet);
 }
