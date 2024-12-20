@@ -138,49 +138,31 @@ function IncreaseClickCounter() {
   UpdateInventory();
 }
 
-function ActivateAutoUpgrade(
-  button: HTMLButtonElement,
-  buttonInfo: Upgrade,
-): void {
-  if (CheckFunds(button, buttonInfo)) {
-    buttonInfo.amountBought += 1;
-    brewRate += buttonInfo.amount;
-    playerMoney -= buttonInfo.cost;
-    buttonInfo.cost *= COST_MULTIPLIER;
-    MakeToolTip(button, buttonInfo);
-    UpdateInventory();
-  }
-  if (buttonInfo.amountBought >= 1) {
-    requestAnimationFrame(function (timestamp: number) {
-      step(timestamp, buttonInfo);
-    });
-  }
-}
-
-function ActivateIncreaseUpgrade(
-  button: HTMLButtonElement,
-  buttonInfo: Upgrade,
-): void {
-  if (CheckFunds(button, buttonInfo)) {
-    buttonInfo.amountBought += 1;
-    sellPrice += buttonInfo.amount;
-    playerMoney -= buttonInfo.cost;
-    buttonInfo.cost *= COST_MULTIPLIER;
-    MakeToolTip(button, buttonInfo);
-    UpdateInventory();
-  }
-}
-
 function ActivateUpgrade(button: HTMLButtonElement, buttonInfo: Upgrade): void {
-  switch (buttonInfo.type) {
-    case "auto":
-      ActivateAutoUpgrade(button, buttonInfo);
-      break;
-    case "increase":
-      ActivateIncreaseUpgrade(button, buttonInfo);
-      break;
-    default:
-      break;
+  if (CheckFunds(button, buttonInfo)) {
+    buttonInfo.amountBought += 1;
+    playerMoney -= buttonInfo.cost;
+    buttonInfo.cost *= COST_MULTIPLIER;
+
+    switch (buttonInfo.type) {
+      // use switch statement in case we add other types of upgrades in the future
+      case "auto":
+        brewRate += buttonInfo.amount;
+        if (buttonInfo.amountBought >= 1) {
+          requestAnimationFrame(function (timestamp: number) {
+            step(timestamp, buttonInfo);
+          });
+        }
+        break;
+      case "increase":
+        sellPrice += buttonInfo.amount;
+        break;
+      default:
+        break;
+    }
+
+    MakeToolTip(button, buttonInfo);
+    UpdateInventory();
   }
 }
 
@@ -232,7 +214,6 @@ header.innerHTML = GAME_NAME;
 app.append(header);
 
 // portion of the UI that displays the inventory
-//const inventory = document.querySelector<HTMLDivElement>("#inventory")!;
 const inventory = document.createElement("div");
 inventory.innerHTML = "Drinks Brewed: 0";
 app.append(inventory);
