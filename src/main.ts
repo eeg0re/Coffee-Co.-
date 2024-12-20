@@ -55,6 +55,18 @@ const upgrades: Upgrade[] = [
       ActivateUpgrade(upgradeButtons[2], upgrades[2]);
     },
   },
+  {
+    label: "Barista",
+    type: "auto",
+    cost: 500,
+    amount: 1.5,
+    description:
+      "Hire a trained barista to brew coffee. Brews 1.5 cups of coffee every second.",
+    amountBought: 0,
+    callback: () => {
+      ActivateUpgrade(upgradeButtons[3], upgrades[3]);
+    },
+  },
 ];
 
 function MakeToolTip(button: HTMLButtonElement, buttonInfo: Upgrade) {
