@@ -73,7 +73,6 @@ function UpdateToolTip(
   button: HTMLButtonElement,
   tooltip: HTMLDivElement,
 ) {
-  //const tooltip = MakeToolTip(button, upgrade);
   button.addEventListener("mouseenter", () => {
     tooltip.style.display = "block";
   }); // show on hover
@@ -90,15 +89,12 @@ function UpdateToolTip(
 function MakeToolTip(button: HTMLButtonElement, buttonInfo: Upgrade) {
   const tooltip = document.createElement("div");
   const upgradeCost = buttonInfo.cost.toFixed(1);
+  const tooltipText = buttonInfo.description +
+    ` (Times bought: ${buttonInfo.amountBought})`;
 
-  if (buttonInfo.type === "auto") {
-    tooltip.textContent =
-      `$${upgradeCost}. Rate: ${buttonInfo.amount.toFixed(2)}. ` +
-      buttonInfo.description + ` (Times bought: ${buttonInfo.amountBought})`;
-  } else {
-    tooltip.textContent = `$${upgradeCost}. ` + buttonInfo.description +
-      ` (Times bought: ${buttonInfo.amountBought})`;
-  }
+  tooltip.textContent = buttonInfo.type === "auto"
+    ? `$${upgradeCost}. Rate: ${buttonInfo.amount.toFixed(2)}. ` + tooltipText
+    : `$${upgradeCost}. ` + tooltipText;
 
   tooltip.style.position = "absolute";
   tooltip.style.backgroundColor = "black";
