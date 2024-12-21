@@ -1,3 +1,3 @@
 export default {
-  base: "https://eeg0re.github.io/Coffee-Co.-/",
+  base: Deno.env.get("REPO_NAME") || "/project",
 };
