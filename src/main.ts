@@ -165,9 +165,11 @@ function ActivateUpgrade(button: HTMLButtonElement, buttonInfo: Upgrade): void {
           });
         }
         break;
+
       case "increase":
         sellPrice += buttonInfo.amount;
         break;
+
       default:
         break;
     }
@@ -215,6 +217,46 @@ function step(timestamp: number, buttonInfo: Upgrade) {
   });
 }
 
+function CreateMainButtons(div: HTMLDivElement) {
+  const mainButton = document.createElement("button");
+  mainButton.innerHTML = "☕️";
+  div.append(mainButton);
+  mainButton.style.width = "200px";
+  mainButton.style.height = "200px";
+  mainButton.style.fontSize = "60px";
+  mainButton.style.borderRadius = "50%";
+  mainButton.style.boxShadow = "5px 5px 15px rgba(0, 0, 0, 0.3)";
+  mainButton.addEventListener("click", IncreaseDrinkCount);
+
+  const sellButton = document.createElement("button");
+  sellButton.innerHTML = "Sell";
+  div.append(sellButton);
+  sellButton.style.borderRadius = "50%";
+  sellButton.style.width = "75px";
+  sellButton.style.height = "75px";
+  sellButton.addEventListener("click", () => {
+    playerMoney += drinkCounter * sellPrice;
+    drinkCounter = 0;
+    UpdateInventory();
+  });
+
+  const shopButton = document.createElement("button");
+  shopButton.innerHTML = "Shop";
+  div.append(shopButton);
+  shopButton.style.borderRadius = "50%";
+  shopButton.style.width = "75px";
+  shopButton.style.height = "75px";
+  shopButton.addEventListener("click", () => {
+    shop.style.display = shop.style.display === "grid" ? "none" : "grid";
+  });
+}
+
+function StartGame() {
+  CreateUpgrades(upgrades);
+  setInterval(CheckAllUpgradePrices, 0);
+  CreateMainButtons(uiDiv);
+}
+
 const GAME_NAME = "Coffee Co.";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
@@ -227,35 +269,9 @@ app.append(header);
 const inventory = createInventoryUI();
 const wallet = inventory.querySelector<HTMLDivElement>("div")!;
 
-// our main button for brewing coffee
-const mainClicker = document.createElement("button");
-mainClicker.innerHTML = "☕️";
-app.append(mainClicker);
-// Add some sauce to it
-mainClicker.style.width = "200px";
-mainClicker.style.height = "200px";
-mainClicker.style.fontSize = "60px";
-mainClicker.style.borderRadius = "50%";
-mainClicker.style.boxShadow = "5px 5px 15px rgba(0, 0, 0, 0.3)";
-mainClicker.addEventListener("click", IncreaseDrinkCount);
-
-const sellButton = document.createElement("button");
-sellButton.innerHTML = "Sell";
-app.append(sellButton);
-sellButton.style.borderRadius = "50%";
-sellButton.style.width = "75px";
-sellButton.style.height = "75px";
-sellButton.addEventListener("click", () => {
-  playerMoney += drinkCounter * sellPrice;
-  drinkCounter = 0;
-  UpdateInventory();
-});
+const uiDiv = document.createElement("div");
+app.append(uiDiv);
 
 app.append(document.createElement("br"));
-
-function StartGame() {
-  CreateUpgrades(upgrades);
-  setInterval(CheckAllUpgradePrices, 0);
-}
 
 StartGame();
